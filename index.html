@@ -74,7 +74,7 @@
         /* Обложка */
         .cover-section {
             min-height: 100vh;
-            background: linear-gradient(rgba(26, 58, 47, 0.8), rgba(26, 58, 47, 0.9)), url('7.wbp') no-repeat center center/cover;
+           background: linear-gradient(rgba(26, 58, 47, 0.8), rgba(26, 58, 47, 0.9)), url('7.jpg') no-repeat center 90%/180% auto;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1149,7 +1149,7 @@
                         </div>
                         <div class="timeline-content">
                             <div class="timeline-time">14:30</div>
-                            <div class="timeline-text">CБОР ГОСТЕЙ<br> В этот волшебный час наши дорогие гости начнут собираться вместе, чтобы стать свидетелями самого прекрасного события в нашей жизни. Тёплая атмосфера предвкушения и радостного ожидания наполнит пространство любовью и счастьем.</div>
+                            <div class="timeline-text">CБОР ГОСТЕЙ. ФУРШЕТ<br> В этот волшебный час наши дорогие гости начнут собираться вместе, чтобы стать свидетелями самого прекрасного события в нашей жизни. Тёплая атмосфера предвкушения и радостного ожидания наполнит пространство любовью и счастьем.</div>
                         </div>
                     </div>
                     <div class="timeline-item">
@@ -1348,8 +1348,22 @@
                             </label>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
+                        <label>Останетесь ли вы на ночь? *</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="overnight" value="yes" required>
+                                <span>Да, останусь</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="overnight" value="no">
+                                <span>Нет, не останусь</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- <div class="form-group">
                         <label for="allergies">Аллергии или особенности питания</label>
                         <textarea id="allergies" name="allergies" rows="3" placeholder="Например: вегетарианское меню, аллергия на орехи..."></textarea>
                     </div>
@@ -1357,7 +1371,7 @@
                     <div class="form-group">
                         <label for="message">Ваши пожелания и поздравления</label>
                         <textarea id="message" name="message" rows="4" placeholder="Поделитесь вашими пожеланиями..."></textarea>
-                    </div>
+                    </div> -->
                     
                     <button type="submit" class="submit-button">Отправить ответ</button>
                 </form>
@@ -1500,128 +1514,109 @@
             });
         });
 
-        // Отправка формы в Telegram
-        class TelegramSender {
-            constructor() {
-                this.token = TELEGRAM_CONFIG.BOT_TOKEN;
+        // Google Sheets отправка
+class SheetSender {
+    constructor() {
+        // ЗАМЕНИТЕ НА ВАШ URL от Google Apps Script
+        this.scriptUrl = 'https://script.google.com/macros/s/ВАШ_ID_СКРИПТА/exec';
+    }
+
+    showNotification(message, type = 'success') {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.className = `notification ${type} show`;
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+        }, 5000);
+    }
+
+    async sendFormData(formData) {
+        try {
+            // Создаем URL с параметрами
+            const params = new URLSearchParams();
+            params.append('name', formData.name);
+            params.append('phone', formData.phone);
+            params.append('attendance', formData.attendance);
+            params.append('overnight', formData.overnight);
+            
+            // Добавляем алкоголь как отдельные параметры
+            if (formData.alcohol && formData.alcohol.length > 0) {
+                formData.alcohol.forEach((item, index) => {
+                    params.append(`alcohol_${index}`, item);
+                });
             }
-
-            getChatId() {
-                return TELEGRAM_CONFIG.CHAT_ID;
-            }
-
-            showNotification(message, type = 'success') {
-                const notification = document.getElementById('notification');
-                notification.textContent = message;
-                notification.className = `notification ${type} show`;
-                
-                setTimeout(() => {
-                    notification.classList.remove('show');
-                }, 5000);
-            }
-
-            async sendFormData(formData) {
-                const chatId = this.getChatId();
-                const message = this.formatMessage(formData);
-                
-                try {
-                    const response = await fetch(`https://api.telegram.org/bot${this.token}/sendMessage`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            chat_id: chatId,
-                            text: message,
-                            parse_mode: 'HTML'
-                        })
-                    });
-                    
-                    const result = await response.json();
-                    return result.ok;
-                } catch (error) {
-                    console.error('Ошибка:', error);
-                    return false;
-                }
-            }
-
-            formatMessage(data) {
-                const attendanceText = {
-                    'yes': '✅ С радостью приду!',
-                    'no': '❌ К сожалению, не смогу',
-                    'maybe': '❓ Пока не уверен(а)'
-                }[data.attendance] || data.attendance;
-
-                const alcoholText = data.alcohol ? data.alcohol.join(', ') : 'Не важно';
-
-                return `
-<b>🎉 НОВЫЙ ОТВЕТ НА СВАДЕБНОЕ ПРИГЛАШЕНИЕ</b>
-
-<b>👤 Имя:</b> ${data.name}
-<b>📞 Телефон:</b> ${data.phone}
-<b>👥 Гостей:</b> ${data.guests}
-
-<b>✅ Присутствие:</b> ${attendanceText}
-<b>🍷 Напитки:</b> ${alcoholText}
-
-<b>⚠️ Аллергии/особенности:</b> ${data.allergies || 'нет'}
-<b>💌 Пожелания:</b> ${data.message || 'нет'}
-
-<b>📅 Отправлено:</b> ${new Date().toLocaleString('ru-RU')}
-                `.trim();
-            }
+            
+            const url = `${this.scriptUrl}?${params.toString()}`;
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'no-cors'
+            });
+            
+            // При mode: 'no-cors' нельзя прочитать ответ, поэтому считаем успехом
+            return true;
+        } catch (error) {
+            console.error('Ошибка:', error);
+            return false;
         }
+    }
+}
 
-        const telegramSender = new TelegramSender();
+const sheetSender = new SheetSender();
 
-        document.getElementById('weddingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const submitBtn = document.querySelector('.submit-button');
-            const originalText = submitBtn.textContent;
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Отправка...';
-            telegramSender.showNotification('Отправляем ваш ответ...', 'loading');
-            
-            try {
-                const alcoholCheckboxes = document.querySelectorAll('input[name="alcohol"]:checked');
-                const alcoholValues = Array.from(alcoholCheckboxes).map(cb => cb.value);
-                
-                const attendanceRadio = document.querySelector('input[name="attendance"]:checked');
-                
-                if (!attendanceRadio) {
-                    throw new Error('Пожалуйста, выберите вариант присутствия');
-                }
-                
-                const formData = {
-                    name: document.getElementById('name').value.trim(),
-                    phone: document.getElementById('phone').value.trim(),
-                    guests: document.getElementById('guests').value,
-                    attendance: attendanceRadio.value,
-                    alcohol: alcoholValues,
-                    allergies: document.getElementById('allergies').value.trim(),
-                    message: document.getElementById('message').value.trim()
-                };
-                
-                // Валидация
-                if (!formData.name || !formData.phone) {
-                    throw new Error('Пожалуйста, заполните обязательные поля');
-                }
-                
-                const success = await telegramSender.sendFormData(formData);
-                
-                if (success) {
-                    telegramSender.showNotification('✅ Спасибо! Ваш ответ отправлен организаторам.', 'success');
-                    e.target.reset();
-                } else {
-                    telegramSender.showNotification('❌ Ошибка отправки. Пожалуйста, попробуйте еще раз.', 'error');
-                }
-            } catch (error) {
-                telegramSender.showNotification(`❌ ${error.message}`, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-            }
-        });
+document.getElementById('weddingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const submitBtn = document.querySelector('.submit-button');
+    const originalText = submitBtn.textContent;
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Отправка...';
+    sheetSender.showNotification('Отправляем ваш ответ...', 'loading');
+    
+    try {
+        const alcoholCheckboxes = document.querySelectorAll('input[name="alcohol"]:checked');
+        const alcoholValues = Array.from(alcoholCheckboxes).map(cb => cb.value);
+        
+        const attendanceRadio = document.querySelector('input[name="attendance"]:checked');
+        const overnightRadio = document.querySelector('input[name="overnight"]:checked');
+        
+        if (!attendanceRadio) {
+            throw new Error('Пожалуйста, выберите вариант присутствия');
+        }
+        
+        if (!overnightRadio) {
+            throw new Error('Пожалуйста, выберите, останетесь ли вы на ночь');
+        }
+        
+        const formData = {
+            name: document.getElementById('name').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            attendance: attendanceRadio.value,
+            overnight: overnightRadio.value,
+            alcohol: alcoholValues
+        };
+        
+        if (!formData.name || !formData.phone) {
+            throw new Error('Пожалуйста, заполните имя и телефон');
+        }
+        
+        const success = await sheetSender.sendFormData(formData);
+        
+        if (success) {
+            sheetSender.showNotification('✅ Спасибо! Ваш ответ сохранен.', 'success');
+            e.target.reset();
+        } else {
+            sheetSender.showNotification('❌ Ошибка отправки. Пожалуйста, попробуйте еще раз.', 'error');
+        }
+    } catch (error) {
+        sheetSender.showNotification(`❌ ${error.message}`, 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+});
 
         
 

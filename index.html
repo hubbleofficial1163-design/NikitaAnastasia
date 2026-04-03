@@ -1067,6 +1067,95 @@
         max-height: 250px;
     }
 }
+
+/* Модальное окно */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--white);
+    border-radius: 25px;
+    padding: 40px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    animation: modalFadeIn 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 1.8rem;
+    color: var(--dark-green);
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.modal-message {
+    font-size: 1.2rem;
+    color: var(--dark-brown);
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.modal-button {
+    background: var(--olive-green);
+    color: var(--white);
+    border: none;
+    padding: 12px 30px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-button:hover {
+    background: var(--accent-green);
+    transform: translateY(-2px);
+}
+
+.modal.success .modal-icon { color: var(--olive-green); }
+.modal.error .modal-icon { color: #d32f2f; }
+.modal.loading .modal-icon { color: var(--dark-green); }
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.modal.loading .fa-spinner {
+    animation: spin 1s linear infinite;
+}
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -1085,7 +1174,7 @@
                     Мы рады пригласить вас разделить с нами радость самого важного дня в нашей жизни. 
                     Ваше присутствие сделает этот день по-настоящему особенным.
                 </p>
-                <div class="signature">Nikita & Anastasia</div>
+                <div class="signature">Nikita and Anastasia</div>
             </div>
 <div class="countdown-wrapper" style="margin-top: 35px; text-align: center;">
     <p style="font-size: 0.85rem; letter-spacing: 2px; margin-bottom: 12px; opacity: 0.8;">ДО НАШЕГО ДНЯ ОСТАЛОСЬ</p>
@@ -1339,7 +1428,7 @@
                                 <span>Шампанское</span>
                             </label>
                             <label class="checkbox-option">
-                                <input type="checkbox" name="alcohol" value="champagne">
+                                <input type="checkbox" name="alcohol" value="vodka">
                                 <span>Водка</span>
                             </label>
                             <label class="checkbox-option">
@@ -1393,248 +1482,79 @@
             <p>С любовью к каждому гостю</p>
         </div>
     </footer>
-
+<!-- Модальное окно -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="modal-title"></div>
+        <div class="modal-message"></div>
+        <button class="modal-button" onclick="closeModal()">Хорошо</button>
+    </div>
+</div>
     <script>
-        const TELEGRAM_CONFIG = {
-            BOT_TOKEN: '837279LQH-4gp94',
-            CHAT_ID: '-1x076754'
-        };
-
-        // Календарь
-        class WeddingCalendar {
-            constructor() {
-                this.currentDate = new Date(2026, 5, 6); // Август 2026
-                this.weddingDate = new Date(2026, 5, 6);
-                this.init();
-            }
-
-            init() {
-                this.renderCalendar();
-                document.getElementById('prevMonth').addEventListener('click', () => this.changeMonth(-1));
-                document.getElementById('nextMonth').addEventListener('click', () => this.changeMonth(1));
-            }
-
-            changeMonth(direction) {
-                this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-                this.renderCalendar();
-            }
-
-            renderCalendar() {
-                const monthYear = document.getElementById('currentMonthYear');
-                const calendarDays = document.getElementById('calendarDays');
-                
-                const monthNames = [
-                    'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
-                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
-                ];
-
-                monthYear.textContent = `${monthNames[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
-
-                calendarDays.innerHTML = '';
-
-                // Получаем первый и последний день месяца
-                const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
-                const lastDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
-                const daysInMonth = lastDay.getDate();
-                
-                // Получаем день недели для первого дня (0-воскресенье, 6-суббота)
-                let firstDayOfWeek = firstDay.getDay();
-                // Преобразуем к формату Пн=0, Вс=6
-                if (firstDayOfWeek === 0) firstDayOfWeek = 6;
-                else firstDayOfWeek--;
-
-                // Добавляем пустые ячейки для дней предыдущего месяца
-                for (let i = 0; i < firstDayOfWeek; i++) {
-                    const emptyDay = document.createElement('div');
-                    emptyDay.className = 'calendar-day other-month';
-                    calendarDays.appendChild(emptyDay);
-                }
-
-                // Добавляем дни текущего месяца
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dayElement = document.createElement('div');
-                    dayElement.className = 'calendar-day';
-                    dayElement.textContent = day;
-
-                    // Проверяем, является ли день днем свадьбы
-                    if (this.currentDate.getMonth() === this.weddingDate.getMonth() &&
-                        this.currentDate.getFullYear() === this.weddingDate.getFullYear() &&
-                        day === this.weddingDate.getDate()) {
-                        dayElement.classList.add('wedding-day');
-                    }
-
-                    calendarDays.appendChild(dayElement);
-                }
-
-                // Добавляем пустые ячейки в конце, если нужно
-                const totalCells = firstDayOfWeek + daysInMonth;
-                const remainingCells = 7 - (totalCells % 7);
-                
-                if (remainingCells < 7) {
-                    for (let i = 0; i < remainingCells; i++) {
-                        const emptyDay = document.createElement('div');
-                        emptyDay.className = 'calendar-day other-month';
-                        calendarDays.appendChild(emptyDay);
-                    }
-                }
-            }
-        }
-
-        // Инициализация календаря
-        const weddingCalendar = new WeddingCalendar();
-
-        // Анимации при скролле
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                }
-            });
-        }, { threshold: 0.1 });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const formGroups = document.querySelectorAll('.form-group');
-            formGroups.forEach(group => observer.observe(group));
-            
-            // Плавная прокрутка для якорных ссылок
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href');
-                    if (targetId === '#') return;
-                    
-                    const targetElement = document.querySelector(targetId);
-                    if (targetElement) {
-                        targetElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                    }
-                });
-            });
-        });
-
-        // Google Sheets отправка
-class SheetSender {
+// ========== КАЛЕНДАРЬ ==========
+class WeddingCalendar {
     constructor() {
-        // ЗАМЕНИТЕ НА ВАШ URL от Google Apps Script
-        this.scriptUrl = 'https://script.google.com/macros/s/ВАШ_ID_СКРИПТА/exec';
+        this.currentDate = new Date(2026, 5, 6);
+        this.weddingDate = new Date(2026, 5, 6);
+        this.init();
     }
 
-    showNotification(message, type = 'success') {
-        const notification = document.getElementById('notification');
-        notification.textContent = message;
-        notification.className = `notification ${type} show`;
+    init() {
+        this.renderCalendar();
+        document.getElementById('prevMonth').addEventListener('click', () => this.changeMonth(-1));
+        document.getElementById('nextMonth').addEventListener('click', () => this.changeMonth(1));
+    }
+
+    changeMonth(direction) {
+        this.currentDate.setMonth(this.currentDate.getMonth() + direction);
+        this.renderCalendar();
+    }
+
+    renderCalendar() {
+        const monthYear = document.getElementById('currentMonthYear');
+        const calendarDays = document.getElementById('calendarDays');
         
-        setTimeout(() => {
-            notification.classList.remove('show');
-        }, 5000);
-    }
-
-    async sendFormData(formData) {
-        try {
-            // Создаем URL с параметрами
-            const params = new URLSearchParams();
-            params.append('name', formData.name);
-            params.append('phone', formData.phone);
-            params.append('attendance', formData.attendance);
-            params.append('overnight', formData.overnight);
+        const monthNames = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+        monthYear.textContent = `${monthNames[this.currentDate.getMonth()]} ${this.currentDate.getFullYear()}`;
+        calendarDays.innerHTML = '';
+        
+        const firstDay = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+        const daysInMonth = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0).getDate();
+        
+        let firstDayOfWeek = firstDay.getDay();
+        if (firstDayOfWeek === 0) firstDayOfWeek = 6;
+        else firstDayOfWeek--;
+        
+        for (let i = 0; i < firstDayOfWeek; i++) {
+            const emptyDay = document.createElement('div');
+            emptyDay.className = 'calendar-day other-month';
+            calendarDays.appendChild(emptyDay);
+        }
+        
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            dayElement.textContent = day;
             
-            // Добавляем алкоголь как отдельные параметры
-            if (formData.alcohol && formData.alcohol.length > 0) {
-                formData.alcohol.forEach((item, index) => {
-                    params.append(`alcohol_${index}`, item);
-                });
+            if (this.currentDate.getMonth() === this.weddingDate.getMonth() &&
+                this.currentDate.getFullYear() === this.weddingDate.getFullYear() &&
+                day === this.weddingDate.getDate()) {
+                dayElement.classList.add('wedding-day');
             }
-            
-            const url = `${this.scriptUrl}?${params.toString()}`;
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                mode: 'no-cors'
-            });
-            
-            // При mode: 'no-cors' нельзя прочитать ответ, поэтому считаем успехом
-            return true;
-        } catch (error) {
-            console.error('Ошибка:', error);
-            return false;
+            calendarDays.appendChild(dayElement);
         }
     }
 }
 
-const sheetSender = new SheetSender();
-
-document.getElementById('weddingForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const submitBtn = document.querySelector('.submit-button');
-    const originalText = submitBtn.textContent;
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Отправка...';
-    sheetSender.showNotification('Отправляем ваш ответ...', 'loading');
-    
-    try {
-        const alcoholCheckboxes = document.querySelectorAll('input[name="alcohol"]:checked');
-        const alcoholValues = Array.from(alcoholCheckboxes).map(cb => cb.value);
-        
-        const attendanceRadio = document.querySelector('input[name="attendance"]:checked');
-        const overnightRadio = document.querySelector('input[name="overnight"]:checked');
-        
-        if (!attendanceRadio) {
-            throw new Error('Пожалуйста, выберите вариант присутствия');
-        }
-        
-        if (!overnightRadio) {
-            throw new Error('Пожалуйста, выберите, останетесь ли вы на ночь');
-        }
-        
-        const formData = {
-            name: document.getElementById('name').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            attendance: attendanceRadio.value,
-            overnight: overnightRadio.value,
-            alcohol: alcoholValues
-        };
-        
-        if (!formData.name || !formData.phone) {
-            throw new Error('Пожалуйста, заполните имя и телефон');
-        }
-        
-        const success = await sheetSender.sendFormData(formData);
-        
-        if (success) {
-            sheetSender.showNotification('✅ Спасибо! Ваш ответ сохранен.', 'success');
-            e.target.reset();
-        } else {
-            sheetSender.showNotification('❌ Ошибка отправки. Пожалуйста, попробуйте еще раз.', 'error');
-        }
-    } catch (error) {
-        sheetSender.showNotification(`❌ ${error.message}`, 'error');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = originalText;
-    }
-});
-
-        
-
-        // Предзагрузка только необходимых изображений
-        window.addEventListener('load', function() {
-            const images = [ '3.jpg']; // Только главное фото и фото для локации
-            images.forEach(img => {
-                const image = new Image();
-                image.src = img;
-            });
-        });
-
-        // Таймер обратного отсчета до 6 июня 2026
+// ========== ТАЙМЕР ОБРАТНОГО ОТСЧЕТА ==========
 function updateCountdown() {
-    const weddingDate = new Date(2026, 5, 6).getTime(); // 6 июня 2026
+    const weddingDate = new Date(2026, 5, 6).getTime();
     const now = new Date().getTime();
     const distance = weddingDate - now;
-
+    
     if (distance < 0) {
         document.getElementById('days').innerHTML = '00';
         document.getElementById('hours').innerHTML = '00';
@@ -1642,20 +1562,180 @@ function updateCountdown() {
         document.getElementById('seconds').innerHTML = '00';
         return;
     }
-
+    
     const days = Math.floor(distance / (1000 * 60 * 60 * 24));
     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
+    
     document.getElementById('days').innerHTML = String(days).padStart(2, '0');
     document.getElementById('hours').innerHTML = String(hours).padStart(2, '0');
     document.getElementById('minutes').innerHTML = String(minutes).padStart(2, '0');
     document.getElementById('seconds').innerHTML = String(seconds).padStart(2, '0');
 }
 
-updateCountdown();
-setInterval(updateCountdown, 1000);
+// ========== АНИМАЦИИ ПРИ СКРОЛЛЕ ==========
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+
+// ========== ИНИЦИАЛИЗАЦИЯ ==========
+document.addEventListener('DOMContentLoaded', () => {
+    // Запускаем календарь
+    new WeddingCalendar();
+    
+    // Запускаем таймер
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    
+    // Анимации для полей формы
+    const formGroups = document.querySelectorAll('.form-group');
+    formGroups.forEach(group => observer.observe(group));
+    
+    // Плавная прокрутка для якорных ссылок
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+});
+
+// ========== МОДАЛЬНОЕ ОКНО ==========
+const modal = document.getElementById('modal');
+const modalIcon = modal.querySelector('.modal-icon i');
+const modalTitle = modal.querySelector('.modal-title');
+const modalMessage = modal.querySelector('.modal-message');
+
+function showModal(type, title, message) {
+    modal.className = 'modal';
+    modal.classList.add(type);
+    
+    const iconMap = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        loading: 'fa-spinner'
+    };
+    modalIcon.className = `fas ${iconMap[type] || 'fa-info-circle'}`;
+    
+    modalTitle.textContent = title;
+    modalMessage.textContent = message;
+    modal.classList.add('show');
+}
+
+function closeModal() {
+    modal.classList.remove('show');
+}
+
+// Закрытие по клику вне окна
+modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+        closeModal();
+    }
+});
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modal.classList.contains('show')) {
+        closeModal();
+    }
+});
+
+// ========== ОТПРАВКА ФОРМЫ ==========
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuDSsHoveYTSPREu7c2vO2TteOUP47-6z7ZETiswQg2FZIXIz1XyOLcBjtg9jKxGzv/exec';
+const form = document.getElementById('weddingForm');
+
+// Убираем старые обработчики
+form.onsubmit = null;
+
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Собираем данные
+    const name = document.getElementById('name').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const attendance = document.querySelector('input[name="attendance"]:checked')?.value;
+    const overnight = document.querySelector('input[name="overnight"]:checked')?.value;
+    
+    const alcoholCheckboxes = document.querySelectorAll('input[name="alcohol"]:checked');
+    const alcohol = Array.from(alcoholCheckboxes).map(cb => cb.value).join(',');
+    
+    // Валидация
+    if (!name || !phone) {
+        showModal('error', 'Ошибка', 'Пожалуйста, заполните имя и телефон');
+        return;
+    }
+    
+    if (!attendance) {
+        showModal('error', 'Ошибка', 'Пожалуйста, выберите вариант присутствия');
+        return;
+    }
+    
+    if (!overnight) {
+        showModal('error', 'Ошибка', 'Пожалуйста, выберите, останетесь ли вы на ночь');
+        return;
+    }
+    
+    // Показываем модальное окно загрузки
+    showModal('loading', 'Отправка...', 'Пожалуйста, подождите, ваш ответ сохраняется');
+    
+    // Отправляем через JSONP
+    const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+    
+    const url = new URL(SCRIPT_URL);
+    url.searchParams.append('name', name);
+    url.searchParams.append('phone', phone);
+    url.searchParams.append('attendance', attendance);
+    url.searchParams.append('overnight', overnight);
+    url.searchParams.append('alcohol', alcohol);
+    url.searchParams.append('callback', callbackName);
+    
+    window[callbackName] = function(response) {
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        
+        if (response && response.result === 'success') {
+            showModal('success', 'Спасибо!', 'Ваш ответ успешно отправлен. Ждём вас на празднике! 🎉');
+            form.reset();
+        } else {
+            showModal('error', 'Ошибка', 'Что-то пошло не так. Попробуйте ещё раз или свяжитесь с нами.');
+        }
+    };
+    
+    const script = document.createElement('script');
+    script.src = url.toString();
+    script.onerror = function() {
+        showModal('error', 'Ошибка', 'Не удалось соединиться с сервером. Проверьте интернет.');
+        delete window[callbackName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+    };
+    
+    document.body.appendChild(script);
+});
+
+// ========== ПРЕДЗАГРУЗКА ИЗОБРАЖЕНИЙ ==========
+window.addEventListener('load', function() {
+    const images = ['3.jpg'];
+    images.forEach(img => {
+        const image = new Image();
+        image.src = img;
+    });
+});
+
+console.log('Скрипт загружен!');
     </script>
 </body>
 </html>

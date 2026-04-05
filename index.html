@@ -1583,37 +1583,6 @@ const observer = new IntersectionObserver((entries) => {
     });
 }, { threshold: 0.1 });
 
-// ========== ИНИЦИАЛИЗАЦИЯ ==========
-document.addEventListener('DOMContentLoaded', () => {
-    // Запускаем календарь
-    new WeddingCalendar();
-    
-    // Запускаем таймер
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-    
-    // Анимации для полей формы
-    const formGroups = document.querySelectorAll('.form-group');
-    formGroups.forEach(group => observer.observe(group));
-    
-    // Плавная прокрутка для якорных ссылок
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
-            e.preventDefault();
-            const targetId = this.getAttribute('href');
-            if (targetId === '#') return;
-            
-            const targetElement = document.querySelector(targetId);
-            if (targetElement) {
-                targetElement.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
-            }
-        });
-    });
-});
-
 // ========== МОДАЛЬНОЕ ОКНО ==========
 const modal = document.getElementById('modal');
 const modalIcon = modal.querySelector('.modal-icon i');
@@ -1655,75 +1624,110 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ========== ОТПРАВКА ФОРМЫ ==========
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyuDSsHoveYTSPREu7c2vO2TteOUP47-6z7ZETiswQg2FZIXIz1XyOLcBjtg9jKxGzv/exec';
+// ВАШ URL ОТ APPS SCRIPT - ЗАМЕНИТЕ НА РЕАЛЬНЫЙ
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbEZrnGGOVcwSajWaz3JPgVP7-r1IhxGyTzxOfAZV4M_Dtp0VHHR2dZMSidGmjUPm4/exec';
 const form = document.getElementById('weddingForm');
 
 // Убираем старые обработчики
-form.onsubmit = null;
-
-form.addEventListener('submit', function(e) {
-    e.preventDefault();
+if (form) {
+    form.onsubmit = null;
     
-    // Собираем данные
-    const name = document.getElementById('name').value.trim();
-    const phone = document.getElementById('phone').value.trim();
-    const attendance = document.querySelector('input[name="attendance"]:checked')?.value;
-    const overnight = document.querySelector('input[name="overnight"]:checked')?.value;
-    
-    const alcoholCheckboxes = document.querySelectorAll('input[name="alcohol"]:checked');
-    const alcohol = Array.from(alcoholCheckboxes).map(cb => cb.value).join(',');
-    
-    // Валидация
-    if (!name || !phone) {
-        showModal('error', 'Ошибка', 'Пожалуйста, заполните имя и телефон');
-        return;
-    }
-    
-    if (!attendance) {
-        showModal('error', 'Ошибка', 'Пожалуйста, выберите вариант присутствия');
-        return;
-    }
-    
-    if (!overnight) {
-        showModal('error', 'Ошибка', 'Пожалуйста, выберите, останетесь ли вы на ночь');
-        return;
-    }
-    
-    // Показываем модальное окно загрузки
-    showModal('loading', 'Отправка...', 'Пожалуйста, подождите, ваш ответ сохраняется');
-    
-    // Отправляем через JSONP
-    const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-    
-    const url = new URL(SCRIPT_URL);
-    url.searchParams.append('name', name);
-    url.searchParams.append('phone', phone);
-    url.searchParams.append('attendance', attendance);
-    url.searchParams.append('overnight', overnight);
-    url.searchParams.append('alcohol', alcohol);
-    url.searchParams.append('callback', callbackName);
-    
-    window[callbackName] = function(response) {
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
         
-        if (response && response.result === 'success') {
-            showModal('success', 'Спасибо!', 'Ваш ответ успешно отправлен. Ждём вас на празднике! 🎉');
-            form.reset();
-        } else {
-            showModal('error', 'Ошибка', 'Что-то пошло не так. Попробуйте ещё раз или свяжитесь с нами.');
+        // Собираем данные
+        const name = document.getElementById('name').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const attendance = document.querySelector('input[name="attendance"]:checked')?.value;
+        const overnight = document.querySelector('input[name="overnight"]:checked')?.value;
+        
+        const alcoholCheckboxes = document.querySelectorAll('input[name="alcohol"]:checked');
+        const alcoholValues = Array.from(alcoholCheckboxes).map(cb => cb.value);
+        const alcohol = alcoholValues.join(',');
+        
+        // Валидация
+        if (!name || !phone) {
+            showModal('error', 'Ошибка', 'Пожалуйста, заполните имя и телефон');
+            return;
         }
-    };
+        
+        if (!attendance) {
+            showModal('error', 'Ошибка', 'Пожалуйста, выберите вариант присутствия');
+            return;
+        }
+        
+        if (!overnight) {
+            showModal('error', 'Ошибка', 'Пожалуйста, выберите, останетесь ли вы на ночь');
+            return;
+        }
+        
+        // Показываем модальное окно загрузки
+        showModal('loading', 'Отправка...', 'Пожалуйста, подождите, ваш ответ сохраняется');
+        
+        // Отправляем через JSONP (поддерживает множественный выбор)
+        const callbackName = 'callback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
+        
+        const url = new URL(SCRIPT_URL);
+        url.searchParams.append('name', name);
+        url.searchParams.append('phone', phone);
+        url.searchParams.append('attendance', attendance);
+        url.searchParams.append('overnight', overnight);
+        url.searchParams.append('alcohol', alcohol);
+        url.searchParams.append('callback', callbackName);
+        
+        window[callbackName] = function(response) {
+            delete window[callbackName];
+            if (script.parentNode) script.parentNode.removeChild(script);
+            
+            if (response && response.result === 'success') {
+                showModal('success', 'Спасибо!', 'Ваш ответ успешно отправлен. Ждём вас на празднике! 🎉');
+                form.reset();
+            } else {
+                showModal('error', 'Ошибка', 'Что-то пошло не так. Попробуйте ещё раз или свяжитесь с нами.');
+            }
+        };
+        
+        const script = document.createElement('script');
+        script.src = url.toString();
+        script.onerror = function() {
+            showModal('error', 'Ошибка', 'Не удалось соединиться с сервером. Проверьте интернет.');
+            delete window[callbackName];
+            if (script.parentNode) script.parentNode.removeChild(script);
+        };
+        
+        document.body.appendChild(script);
+    });
+}
+
+// ========== ИНИЦИАЛИЗАЦИЯ ==========
+document.addEventListener('DOMContentLoaded', () => {
+    // Запускаем календарь
+    new WeddingCalendar();
     
-    const script = document.createElement('script');
-    script.src = url.toString();
-    script.onerror = function() {
-        showModal('error', 'Ошибка', 'Не удалось соединиться с сервером. Проверьте интернет.');
-        delete window[callbackName];
-        if (script.parentNode) script.parentNode.removeChild(script);
-    };
+    // Запускаем таймер
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
     
-    document.body.appendChild(script);
+    // Анимации для полей формы
+    const formGroups = document.querySelectorAll('.form-group');
+    formGroups.forEach(group => observer.observe(group));
+    
+    // Плавная прокрутка для якорных ссылок
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
 });
 
 // ========== ПРЕДЗАГРУЗКА ИЗОБРАЖЕНИЙ ==========
@@ -1736,6 +1740,6 @@ window.addEventListener('load', function() {
 });
 
 console.log('Скрипт загружен!');
-    </script>
+</script>
 </body>
 </html>
